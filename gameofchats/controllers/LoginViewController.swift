@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 // https://quinesoft.de/2016/05/23/swift-enumerate-iterate-enum/
 protocol EnumerableEnum: RawRepresentable {
@@ -63,6 +64,7 @@ class LoginViewController: UIViewController {
         b.translatesAutoresizingMaskIntoConstraints = false
         b.setTitleColor(UIColor.white, for: .normal)
         b.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
+        b.addTarget(self, action: #selector(handleRegister), for: .touchUpInside)
         return b
     }()
     
@@ -86,6 +88,37 @@ class LoginViewController: UIViewController {
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
+    }
+    
+    @objc func handleRegister() {
+        guard
+            let name = self.textFields[TextField.name.rawValue].text,
+            let email = self.textFields[TextField.email.rawValue].text,
+            let password = self.textFields[TextField.password.rawValue].text else {
+                print("invalid form")
+                return
+        }
+        
+        Firebase.Auth.auth().createUser(withEmail: email, password: password, completion: { (user, error) in
+            if error != nil {
+                print(error ?? "")
+                return
+            }
+            
+            guard let uid = user?.uid else { return }
+            let ref = Firebase.Database.database().reference(fromURL: "https://gameofchats-7aae3.firebaseio.com/")
+            let userRef = ref.child("users").child(uid)
+            let values = ["name": name, "email": email]
+            userRef.updateChildValues(values, withCompletionBlock: {(uError, uRef) in
+                if uError != nil {
+                    print(error ?? "")
+                    return
+                }
+                print("Saved user successfully")
+            })
+            
+        })
+        
     }
     
     fileprivate func setupTextFields(_ container: UIView) {
