@@ -48,6 +48,11 @@ class LoginViewController: UIViewController {
         }
     }
     
+    enum Segment: Int {
+        case login = 0
+        case register
+    }
+    
     let inputsContainerView: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
@@ -64,7 +69,7 @@ class LoginViewController: UIViewController {
         b.translatesAutoresizingMaskIntoConstraints = false
         b.setTitleColor(UIColor.white, for: .normal)
         b.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
-        b.addTarget(self, action: #selector(handleRegister), for: .touchUpInside)
+        b.addTarget(self, action: #selector(handleLoginRegister), for: .touchUpInside)
         return b
     }()
     
@@ -78,6 +83,8 @@ class LoginViewController: UIViewController {
         return fs
     }()
     
+    var textFieldConstraints = [NSLayoutConstraint]()
+    
     let profileImageView: UIImageView = {
         let v = UIImageView()
         v.image = UIImage(named: "gameofthrones_splash")
@@ -86,11 +93,59 @@ class LoginViewController: UIViewController {
         return v
     }()
     
+    let loginRegisterSegmentedControl: UISegmentedControl = {
+        let sc = UISegmentedControl(items: ["Login", "Register"])
+        sc.tintColor = UIColor.white
+        sc.translatesAutoresizingMaskIntoConstraints = false
+        sc.selectedSegmentIndex = 1;
+        sc.addTarget(self, action: #selector(handleLoginRegisterChange), for: .valueChanged)
+        return sc
+    }()
+    
+    @objc func handleLoginRegisterChange(){
+        let title = loginRegisterSegmentedControl.titleForSegment(at: loginRegisterSegmentedControl.selectedSegmentIndex)
+        loginRegisterButton.setTitle(title, for: .normal)
+        
+        inputsContainerViewHeightAnchor?.constant = loginRegisterSegmentedControl.selectedSegmentIndex == Segment.login.rawValue ? 100 : 150
+        
+        let length = loginRegisterSegmentedControl.selectedSegmentIndex == Segment.login.rawValue ? self.textFields.count - 1 : self.textFields.count
+        for(i, tf) in (self.textFieldConstraints.enumerated()) {
+            tf.isActive = false
+            let multiplier:CGFloat = i == 0 && loginRegisterSegmentedControl.selectedSegmentIndex == Segment.login.rawValue ? 0 : 1/CGFloat(length)
+            self.textFieldConstraints[i] = textFields[i].heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: multiplier)
+            self.textFieldConstraints[i].isActive = true
+        }
+    }
+    
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
     
-    @objc func handleRegister() {
+    @objc func handleLoginRegister() {
+        if loginRegisterSegmentedControl.selectedSegmentIndex == Segment.login.rawValue {
+            handleLogin()
+        } else {
+            handleLogout()
+        }
+    }
+    func handleLogin() {
+        guard
+            let email = self.textFields[TextField.email.rawValue].text,
+            let password = self.textFields[TextField.password.rawValue].text else {
+                print("invalid form")
+                return
+        }
+        Auth.auth().signIn(withEmail: email, password: password, completion: { (user, error) in
+            if error == nil {
+                print(user?.displayName ?? "User logged in")
+                self.dismiss(animated: true, completion: nil)
+            } else {
+                print ("Error signing in: %@", error ?? "")
+            }
+        })
+    }
+    
+    func handleLogout() {
         guard
             let name = self.textFields[TextField.name.rawValue].text,
             let email = self.textFields[TextField.email.rawValue].text,
@@ -114,11 +169,10 @@ class LoginViewController: UIViewController {
                     print(error ?? "")
                     return
                 }
-                print("Saved user successfully")
+                self.dismiss(animated: true, completion: nil)
             })
             
         })
-        
     }
     
     fileprivate func setupTextFields(_ container: UIView) {
@@ -129,7 +183,9 @@ class LoginViewController: UIViewController {
             tf.topAnchor.constraint(equalTo: lastElement.topAnchor).isActive = true
             tf.leftAnchor.constraint(equalTo: container.leftAnchor, constant: 12).isActive = true
             tf.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor).isActive = true
-            tf.heightAnchor.constraint(equalTo: container.heightAnchor, multiplier: 1/CGFloat(length)).isActive = true
+            textFieldConstraints.append(tf.heightAnchor.constraint(equalTo: container.heightAnchor, multiplier: 1/CGFloat(length)))
+            textFieldConstraints[i].isActive = true
+//            tf.heightAnchor.constraint(equalTo: container.heightAnchor, multiplier: 1/CGFloat(length)).isActive = true
             lastElement = tf
             
             if length != 1 && i < (length-1) {
@@ -144,11 +200,14 @@ class LoginViewController: UIViewController {
         }
     }
     
+    var inputsContainerViewHeightAnchor: NSLayoutConstraint?
+    
     fileprivate func setupInputsContainerView() {
         inputsContainerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         inputsContainerView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
         inputsContainerView.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -24).isActive = true
-        inputsContainerView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+        inputsContainerViewHeightAnchor = inputsContainerView.heightAnchor.constraint(equalToConstant: 150)
+        inputsContainerViewHeightAnchor?.isActive = true
         
         setupTextFields(inputsContainerView)
         
@@ -162,22 +221,41 @@ class LoginViewController: UIViewController {
         loginRegisterButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
     }
     
+    fileprivate func setupProfileImage() {
+        profileImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        profileImageView.bottomAnchor.constraint(equalTo: loginRegisterSegmentedControl.topAnchor, constant: -12).isActive = true
+        profileImageView.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        profileImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+    }
+    
+    fileprivate func setupLoginRegisterSegmentedControl() {
+        loginRegisterSegmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        loginRegisterSegmentedControl.bottomAnchor.constraint(equalTo: inputsContainerView.topAnchor, constant: -12).isActive = true
+        loginRegisterSegmentedControl.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor, multiplier: 1).isActive = true
+        loginRegisterSegmentedControl.heightAnchor.constraint(equalToConstant: 36)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         view.backgroundColor = UIColor(r: 61, g: 91, b: 151)
         
         view.addSubview(inputsContainerView)
-        setupInputsContainerView()
-        
         view.addSubview(loginRegisterButton)
-        setupLoginRegisterButton()
-        
         view.addSubview(profileImageView)
-        profileImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        profileImageView.bottomAnchor.constraint(equalTo: inputsContainerView.topAnchor, constant: -12).isActive = true
-        profileImageView.widthAnchor.constraint(equalToConstant: 150).isActive = true
-        profileImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+        view.addSubview(loginRegisterSegmentedControl)
+        
+        setupInputsContainerView()
+        setupLoginRegisterButton()
+        setupProfileImage()
+        setupLoginRegisterSegmentedControl()
     }
     
 }
+
+
+
+
+
+
+

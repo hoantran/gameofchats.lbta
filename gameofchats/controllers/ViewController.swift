@@ -21,16 +21,22 @@ class ViewController: UITableViewController {
         super.viewDidLoad()
         view.backgroundColor = UIColor.cyan
         
-//        let ref = Firebase.Database().reference("https://gameofchats-7aae3.firebaseio.com/")
-//        let ref = Firebase.Database.database().reference(fromURL: "https://gameofchats-7aae3.firebaseio.com/")
-//        ref.updateChildValues(["someValue":123432])
-        
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
         
-//        handleLogout()
+        if Auth.auth().currentUser?.uid == nil {
+            perform(#selector(handleLogout))
+        }
     }
     
     @objc func handleLogout() {
+        if Auth.auth().currentUser?.uid != nil {
+            do {
+                try Auth.auth().signOut()
+            } catch let signOutError as NSError {
+                print ("Error signing out: %@", signOutError)
+            }
+        }
+        
         let loginController = LoginViewController()
         present(loginController, animated: true, completion: nil)
     }
