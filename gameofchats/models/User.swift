@@ -12,6 +12,7 @@ import Firebase
 class User: NSObject {
     @objc var name: String?
     @objc var email: String?
+    @objc var profileImageURL: String?
     
     init?(_ snapshot: DataSnapshot) {
         guard let dictionary = snapshot.value as? [String: Any] else { return nil}

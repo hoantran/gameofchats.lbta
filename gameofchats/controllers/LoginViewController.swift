@@ -36,7 +36,7 @@ class TextFieldSeparator: UIView {
     }
 }
 
-class LoginViewController: UIViewController {
+class LoginViewController: UIViewController, UIGestureRecognizerDelegate {
     enum TextField: Int, EnumerableEnum {
         case name = 0
         case email
@@ -85,15 +85,17 @@ class LoginViewController: UIViewController {
     
     var textFieldConstraints = [NSLayoutConstraint]()
     
-    let profileImageView: UIImageView = {
+    lazy var profileImageView: UIImageView = {
         let v = UIImageView()
         v.image = UIImage(named: "gameofthrones_splash")
         v.translatesAutoresizingMaskIntoConstraints = false
         v.contentMode = .scaleAspectFill
+        v.isUserInteractionEnabled = true
+        v.addGestureRecognizer( UITapGestureRecognizer(target: self, action: #selector(handleSelectProfileImageView)) )
         return v
     }()
     
-    let loginRegisterSegmentedControl: UISegmentedControl = {
+    var loginRegisterSegmentedControl: UISegmentedControl = {
         let sc = UISegmentedControl(items: ["Login", "Register"])
         sc.tintColor = UIColor.white
         sc.translatesAutoresizingMaskIntoConstraints = false
@@ -125,7 +127,7 @@ class LoginViewController: UIViewController {
         if loginRegisterSegmentedControl.selectedSegmentIndex == Segment.login.rawValue {
             handleLogin()
         } else {
-            handleLogout()
+            handleRegister()
         }
     }
     func handleLogin() {
@@ -142,36 +144,6 @@ class LoginViewController: UIViewController {
             } else {
                 print ("Error signing in: %@", error ?? "")
             }
-        })
-    }
-    
-    func handleLogout() {
-        guard
-            let name = self.textFields[TextField.name.rawValue].text,
-            let email = self.textFields[TextField.email.rawValue].text,
-            let password = self.textFields[TextField.password.rawValue].text else {
-                print("invalid form")
-                return
-        }
-        
-        Firebase.Auth.auth().createUser(withEmail: email, password: password, completion: { (user, error) in
-            if error != nil {
-                print(error ?? "")
-                return
-            }
-            
-            guard let uid = user?.uid else { return }
-            let ref = Firebase.Database.database().reference(fromURL: "https://gameofchats-7aae3.firebaseio.com/")
-            let userRef = ref.child("users").child(uid)
-            let values = ["name": name, "email": email]
-            userRef.updateChildValues(values, withCompletionBlock: {(uError, uRef) in
-                if uError != nil {
-                    print(error ?? "")
-                    return
-                }
-                self.dismiss(animated: true, completion: nil)
-            })
-            
         })
     }
     
@@ -244,6 +216,7 @@ class LoginViewController: UIViewController {
         view.addSubview(loginRegisterButton)
         view.addSubview(profileImageView)
         view.addSubview(loginRegisterSegmentedControl)
+        view.bringSubview(toFront: profileImageView)
         
         setupInputsContainerView()
         setupLoginRegisterButton()
