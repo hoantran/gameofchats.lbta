@@ -53,6 +53,12 @@ class LoginViewController: UIViewController, UIGestureRecognizerDelegate {
         case register
     }
     
+    var messageController: MessageController?
+    
+    static let MAIN_REF = "https://gameofchats-7aae3.firebaseio.com/"
+    
+    var profileImageURLHash = -1
+    
     let inputsContainerView: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
@@ -121,30 +127,6 @@ class LoginViewController: UIViewController, UIGestureRecognizerDelegate {
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
-    }
-    
-    @objc func handleLoginRegister() {
-        if loginRegisterSegmentedControl.selectedSegmentIndex == Segment.login.rawValue {
-            handleLogin()
-        } else {
-            handleRegister()
-        }
-    }
-    func handleLogin() {
-        guard
-            let email = self.textFields[TextField.email.rawValue].text,
-            let password = self.textFields[TextField.password.rawValue].text else {
-                print("invalid form")
-                return
-        }
-        Auth.auth().signIn(withEmail: email, password: password, completion: { (user, error) in
-            if error == nil {
-                print(user?.displayName ?? "User logged in")
-                self.dismiss(animated: true, completion: nil)
-            } else {
-                print ("Error signing in: %@", error ?? "")
-            }
-        })
     }
     
     fileprivate func setupTextFields(_ container: UIView) {
