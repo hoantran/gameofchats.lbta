@@ -18,6 +18,7 @@
 		3B579A3B1F60A4790021E5BB /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3B579A391F60A4790021E5BB /* LaunchScreen.storyboard */; };
 		3B579A441F60ACA70021E5BB /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B579A431F60ACA70021E5BB /* LoginViewController.swift */; };
 		3BD725751F63D6840028C3D4 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3BB711911F63D41E00DA5E05 /* GoogleService-Info.plist */; };
+		3BEDC1011F7B558000073581 /* ChatLogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BEDC1001F7B558000073581 /* ChatLogController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		3B579A3C1F60A4790021E5BB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3B579A431F60ACA70021E5BB /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		3BB711911F63D41E00DA5E05 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = SOURCE_ROOT; };
+		3BEDC1001F7B558000073581 /* ChatLogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogController.swift; sourceTree = "<group>"; };
 		EAD752D8DF096E6EC8B49CA0 /* Pods-gameofchats.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-gameofchats.release.xcconfig"; path = "Pods/Target Support Files/Pods-gameofchats/Pods-gameofchats.release.xcconfig"; sourceTree = "<group>"; };
 		FB518A2B7D4BC028DB899546 /* Pods_gameofchats.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_gameofchats.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -106,6 +108,7 @@
 				3B579A431F60ACA70021E5BB /* LoginViewController.swift */,
 				3B2C78961F739F71009E3FBA /* LoginViewController+Handlers.swift */,
 				3B2C78911F7268CE009E3FBA /* NewMessageController.swift */,
+				3BEDC1001F7B558000073581 /* ChatLogController.swift */,
 			);
 			path = controllers;
 			sourceTree = "<group>";
@@ -262,6 +265,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3BEDC1011F7B558000073581 /* ChatLogController.swift in Sources */,
 				3B2C78921F7268CE009E3FBA /* NewMessageController.swift in Sources */,
 				3B579A441F60ACA70021E5BB /* LoginViewController.swift in Sources */,
 				3B579A331F60A4790021E5BB /* MessageController.swift in Sources */,
@@ -401,7 +405,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2473KE85XF;
 				INFOPLIST_FILE = gameofchats/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bluepego.gameofchats;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -418,7 +422,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2473KE85XF;
 				INFOPLIST_FILE = gameofchats/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bluepego.gameofchats;
 				PRODUCT_NAME = "$(TARGET_NAME)";

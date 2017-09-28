@@ -40,12 +40,9 @@ class MessageController: UITableViewController {
     func setupNavBar(_ user: User) {
         let titleView = UIView()
         titleView.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
-        //        titleView.backgroundColor = UIColor.redColor()
+        titleView.backgroundColor = UIColor.red
         
-        let containerView = UIView()
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        titleView.addSubview(containerView)
-        
+        // HACK
         self.profileImageView = UIImageView()
         if let profileImageView = profileImageView {
             profileImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -53,32 +50,97 @@ class MessageController: UITableViewController {
             profileImageView.layer.cornerRadius = 20
             profileImageView.clipsToBounds = true
             profileImageView.loadImage(user.profileImageURL)
-            
-            containerView.addSubview(profileImageView)
-            
+
+            titleView.addSubview(profileImageView)
+
             //ios 9 constraint anchors
             //need x,y,width,height anchors
-            profileImageView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
-            profileImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+            profileImageView.leftAnchor.constraint(equalTo: titleView.leftAnchor).isActive = true
+            profileImageView.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
             profileImageView.widthAnchor.constraint(equalToConstant: 40).isActive = true
             profileImageView.heightAnchor.constraint(equalToConstant: 40).isActive = true
-            
+
             let nameLabel = UILabel()
 
-            containerView.addSubview(nameLabel)
+            titleView.addSubview(nameLabel)
             nameLabel.text = user.name
             nameLabel.translatesAutoresizingMaskIntoConstraints = false
             //need x,y,width,height anchors
             nameLabel.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8).isActive = true
-            nameLabel.centerYAnchor.constraint(equalTo: profileImageView.centerYAnchor).isActive = true
-            nameLabel.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
-            nameLabel.heightAnchor.constraint(equalTo: profileImageView.heightAnchor).isActive = true
+            nameLabel.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
+            nameLabel.widthAnchor.constraint(equalTo: titleView.widthAnchor).isActive = true
+            nameLabel.heightAnchor.constraint(equalTo: titleView.heightAnchor).isActive = true
         }
-        containerView.centerXAnchor.constraint(equalTo: titleView.centerXAnchor).isActive = true
-        containerView.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
+
+// PER VIDEO'S INSTRUCTION
+//        let containerView = UIView()
+//        containerView.translatesAutoresizingMaskIntoConstraints = false
+//
+//        titleView.addSubview(containerView)
+//
+//        self.profileImageView = UIImageView()
+//        if let profileImageView = profileImageView {
+//            profileImageView.translatesAutoresizingMaskIntoConstraints = false
+//            profileImageView.contentMode = .scaleAspectFill
+//            profileImageView.layer.cornerRadius = 20
+//            profileImageView.clipsToBounds = true
+//            profileImageView.loadImage(user.profileImageURL)
+//
+//            containerView.addSubview(profileImageView)
+//
+//            //ios 9 constraint anchors
+//            //need x,y,width,height anchors
+//            profileImageView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
+//            profileImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+//            profileImageView.widthAnchor.constraint(equalToConstant: 40).isActive = true
+//            profileImageView.heightAnchor.constraint(equalToConstant: 40).isActive = true
+//
+//            let nameLabel = UILabel()
+//
+//            containerView.addSubview(nameLabel)
+//            nameLabel.text = user.name
+//            nameLabel.translatesAutoresizingMaskIntoConstraints = false
+//            //need x,y,width,height anchors
+//            nameLabel.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8).isActive = true
+//            nameLabel.centerYAnchor.constraint(equalTo: profileImageView.centerYAnchor).isActive = true
+//            nameLabel.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
+//            nameLabel.heightAnchor.constraint(equalTo: profileImageView.heightAnchor).isActive = true
+//        }
+//        containerView.centerXAnchor.constraint(equalTo: titleView.centerXAnchor).isActive = true
+//        containerView.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
         
         self.navigationItem.titleView = titleView
+        titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showChatController)))
+        
+        // trying to have a touch layer ontop: unsuccessful
+//        let clickView = UIView()
+//        clickView.translatesAutoresizingMaskIntoConstraints = false
+//        clickView.backgroundColor = UIColor.green
+//        clickView.isOpaque = true
+//        titleView.addSubview(clickView)
+//        clickView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
+//        clickView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+//        clickView.widthAnchor.constraint(equalTo: titleView.widthAnchor).isActive = true
+//        clickView.heightAnchor.constraint(equalTo: titleView.heightAnchor).isActive = true
+//        clickView.isUserInteractionEnabled = true
+//        clickView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showChatController)))
+//        titleView.bringSubview(toFront: clickView)
     }
+    
+    @objc func showChatController() {
+        print("HHHH")
+        let chatLogController = ChatLogController(collectionViewLayout: UICollectionViewFlowLayout())
+        navigationController?.pushViewController(chatLogController, animated: true)
+    }
+        
+//        titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showChatController)))
+//    }
+//
+//    @objc func showChatController() {
+//        print("hey")
+//        let controller = ChatLogController()
+//        navigationController?.pushViewController(controller, animated: true)
+//    }
     
     @objc func handleNewMessage() {
         let controller = NewMessageController()
