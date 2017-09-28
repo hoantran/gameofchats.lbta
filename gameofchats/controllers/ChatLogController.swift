@@ -10,6 +10,11 @@ import UIKit
 import Firebase
 
 class ChatLogController: UICollectionViewController, UITextFieldDelegate {
+    var user: User? {
+        didSet {
+            navigationItem.title = user?.name
+        }
+    }
     
     lazy var inputTextField:UITextField = {
         let tf = UITextField()
@@ -23,7 +28,6 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.title = "Chat Log"
         collectionView?.backgroundColor = UIColor.white
         setupInputParts()
     }
@@ -54,7 +58,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         let sendButton = UIButton(type: .system)
         sendButton.setTitle("Send", for: .normal)
         sendButton.translatesAutoresizingMaskIntoConstraints = false
-        sendButton.addTarget(self, action: #selector(handlSend), for: .touchUpInside)
+        sendButton.addTarget(self, action: #selector(handleSend), for: .touchUpInside)
         containerView.addSubview(sendButton)
         NSLayoutConstraint.activate([
             sendButton.rightAnchor.constraint(equalTo: containerView.rightAnchor),
@@ -85,22 +89,23 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if textField == inputTextField {
-            handlSend()
+            handleSend()
             return true
         }
         return false
     }
     
-    @objc func handlSend() {
-        if let message = inputTextField.text {
+    @objc func handleSend() {
+        if  let message = inputTextField.text,
+            let toID = user?.id,
+            let fromID = Auth.auth().currentUser?.uid {
             let ref = Database.database().reference().child("messages")
             let childRef = ref.childByAutoId()
-            
-            let values = ["text": message]
+            let timestamp:NSNumber = NSNumber(value: Int(NSDate().timeIntervalSince1970))
+            let values = ["text": message, "fromID": fromID, "toID": toID, "timestamp": timestamp] as [String : Any]
             childRef.updateChildValues(values)
             
             inputTextField.text = ""
-        
         }
     }
     

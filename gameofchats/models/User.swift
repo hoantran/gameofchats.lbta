@@ -10,6 +10,7 @@ import UIKit
 import Firebase
 
 class User: NSObject {
+    @objc var id: String?
     @objc var name: String?
     @objc var email: String?
     @objc var profileImageURL: String?
@@ -19,6 +20,7 @@ class User: NSObject {
         guard let dictionary = snapshot.value as? [String: Any] else { return nil}
         super.init()
         setValuesForKeys(dictionary)
+        id = snapshot.key
     }
     
     init(dictionary: [AnyHashable: Any]) {

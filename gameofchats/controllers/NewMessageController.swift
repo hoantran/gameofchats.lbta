@@ -60,6 +60,15 @@ class NewMessageController: UITableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 56
     }
+    
+    var messageController: MessageController?
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        dismiss(animated: true, completion: {
+            self.messageController?.showChatController(user: self.users[indexPath.row])
+        })
+    }
+    
 }
 
 class NewMessageCell:UITableViewCell {
