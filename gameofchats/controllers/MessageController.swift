@@ -151,11 +151,39 @@ class MessageController: UITableViewController {
         observeMessages()
     }
     
+    func reloadMessages() {
+        filterMessages()
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
+    }
+    
+    func filterMessages() {
+        self.messages = getMessagesForCurrentUser(Array(self.messageDictionary.values))
+        self.messages.sort(by: {m1, m2 in
+            if let m1Time = m1.timestamp?.intValue, let m2Time = m2.timestamp?.intValue {
+                return m1Time > m2Time
+            } else {
+                return false
+            }
+        })
+    }
+    
+    func getMessagesForCurrentUser(_ messages: [Message]) -> [Message] {
+        if let currentID = Auth.auth().currentUser?.uid {
+            return messages.filter({m in
+                return m.toID == currentID || m.fromID == currentID
+            })
+        } else {
+            return [Message]()
+        }
+    }
+    
     func observeMessages() {
         let ref = Database.database().reference().child("messages")
+        ref.removeAllObservers()
         ref.observe(.childAdded, with: {snapshot in
             if let message = Message(snapshot) {
-                
                 if let toID = message.toID {
                     if let existing = self.messageDictionary[toID] {
                         if let questionedTime = message.timestamp?.intValue, let existedTime = existing.timestamp?.intValue {
@@ -166,15 +194,7 @@ class MessageController: UITableViewController {
                     }
                     
                     self.messageDictionary[toID] = message
-                    self.messages = Array(self.messageDictionary.values)
-                    self.messages.sort(by: {m1, m2 in
-                        if let m1Time = m1.timestamp?.intValue, let m2Time = m2.timestamp?.intValue {
-                            return m1Time > m2Time
-                        } else {
-                            return false
-                        }
-                    })
-                    print(self.messages)
+                    self.filterMessages()
                 }
                 
                 DispatchQueue.main.async {
