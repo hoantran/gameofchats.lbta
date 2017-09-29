@@ -139,8 +139,8 @@ class LoginViewController: UIViewController, UIGestureRecognizerDelegate {
             tf.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor).isActive = true
             textFieldConstraints.append(tf.heightAnchor.constraint(equalTo: container.heightAnchor, multiplier: 1/CGFloat(length)))
             textFieldConstraints[i].isActive = true
-//            tf.heightAnchor.constraint(equalTo: container.heightAnchor, multiplier: 1/CGFloat(length)).isActive = true
             lastElement = tf
+            tf.delegate = self
             
             if length != 1 && i < (length-1) {
                 let s1 = TextFieldSeparator()
@@ -205,9 +205,14 @@ class LoginViewController: UIViewController, UIGestureRecognizerDelegate {
         setupProfileImage()
         setupLoginRegisterSegmentedControl()
     }
-    
 }
 
+extension LoginViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        handleLoginRegister()
+        return true
+    }
+}
 
 
 

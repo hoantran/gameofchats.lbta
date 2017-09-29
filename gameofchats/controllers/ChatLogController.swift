@@ -108,17 +108,9 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
                     print ("Error in saving a new message : %@", errorA ?? "")
                     return
                 }
-                let userMessagesRef = Constants.dbUserMessages.child(fromID)
-                let set = [messgeRef.key:1]
-                userMessagesRef.updateChildValues(set, withCompletionBlock: {errorB, refB in
-                    if errorB != nil {
-                        print ("Error in saving a user message : %@", errorB ?? "")
-                        return
-                    }
-                })
                 
-                Constants.dbUserMessages.child(toID).updateChildValues([messgeRef.key:1])
-                
+                let userMessagesDictionary = ["/\(fromID)/\(messgeRef.key)": 1, "/\(toID)/\(messgeRef.key)": 1]
+                Constants.dbUserMessages.updateChildValues(userMessagesDictionary)
             })
             inputTextField.text = ""
         }

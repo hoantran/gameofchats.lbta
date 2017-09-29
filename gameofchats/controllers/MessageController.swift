@@ -132,8 +132,9 @@ class MessageController: UITableViewController {
             let messageRef = Constants.dbMessages.child(messageID)
             messageRef.observeSingleEvent(of: .value, with: {messageSnap in
                 if let message = Message(messageSnap) {
-                    if let toID = message.toID {
-                        if let existing = self.messageDictionary[toID] {
+                    if let toID = message.toID, let fromID = message.fromID {
+                        let key = "\(toID):from:\(fromID)"
+                        if let existing = self.messageDictionary[key] {
                             if let questionedTime = message.timestamp?.intValue, let existedTime = existing.timestamp?.intValue {
                                 if questionedTime <= existedTime {
                                     return
@@ -141,7 +142,7 @@ class MessageController: UITableViewController {
                             }
                         }
                         
-                        self.messageDictionary[toID] = message
+                        self.messageDictionary[key] = message
                         self.filterMessages()
                     }
                     
