@@ -41,41 +41,15 @@ class MessageController: UITableViewController {
     var profileImageView: UIImageView?
     
     func setupNavBar(_ user: User) {
+        messages.removeAll()
+        messageDictionary.removeAll()
+        tableView.reloadData()
+        observeUserMessages()
+        
         let titleView = UIView()
         titleView.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
         titleView.backgroundColor = UIColor.red
-        
-//        // HACK
-//        self.profileImageView = UIImageView()
-//        if let profileImageView = profileImageView {
-//            profileImageView.translatesAutoresizingMaskIntoConstraints = false
-//            profileImageView.contentMode = .scaleAspectFill
-//            profileImageView.layer.cornerRadius = 20
-//            profileImageView.clipsToBounds = true
-//            profileImageView.loadImage(user.profileImageURL)
-//
-//            titleView.addSubview(profileImageView)
-//
-//            //ios 9 constraint anchors
-//            //need x,y,width,height anchors
-//            profileImageView.leftAnchor.constraint(equalTo: titleView.leftAnchor).isActive = true
-//            profileImageView.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
-//            profileImageView.widthAnchor.constraint(equalToConstant: 40).isActive = true
-//            profileImageView.heightAnchor.constraint(equalToConstant: 40).isActive = true
-//
-//            let nameLabel = UILabel()
-//
-//            titleView.addSubview(nameLabel)
-//            nameLabel.text = user.name
-//            nameLabel.translatesAutoresizingMaskIntoConstraints = false
-//            //need x,y,width,height anchors
-//            nameLabel.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8).isActive = true
-//            nameLabel.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
-//            nameLabel.widthAnchor.constraint(equalTo: titleView.widthAnchor).isActive = true
-//            nameLabel.heightAnchor.constraint(equalTo: titleView.heightAnchor).isActive = true
-//        }
 
-// PER VIDEO'S INSTRUCTION
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -148,14 +122,35 @@ class MessageController: UITableViewController {
         tableView.register(UserCell.self, forCellReuseIdentifier: UserCell.cellID)
         
         checkIfUserIsLoggedIn()
-        observeMessages()
     }
     
-    func reloadMessages() {
-        filterMessages()
-        DispatchQueue.main.async {
-            self.tableView.reloadData()
-        }
+    func observeUserMessages(){
+        guard let userID = Auth.auth().currentUser?.uid else { return }
+        let ref = Constants.dbUserMessages.child(userID)
+        ref.observe(.childAdded, with: {snapshot in
+            let messageID = snapshot.key
+            let messageRef = Constants.dbMessages.child(messageID)
+            messageRef.observeSingleEvent(of: .value, with: {messageSnap in
+                if let message = Message(messageSnap) {
+                    if let toID = message.toID {
+                        if let existing = self.messageDictionary[toID] {
+                            if let questionedTime = message.timestamp?.intValue, let existedTime = existing.timestamp?.intValue {
+                                if questionedTime <= existedTime {
+                                    return
+                                }
+                            }
+                        }
+                        
+                        self.messageDictionary[toID] = message
+                        self.filterMessages()
+                    }
+                    
+                    DispatchQueue.main.async {
+                        self.tableView.reloadData()
+                    }
+                }
+            })
+        })
     }
     
     func filterMessages() {
@@ -177,31 +172,6 @@ class MessageController: UITableViewController {
         } else {
             return [Message]()
         }
-    }
-    
-    func observeMessages() {
-        let ref = Database.database().reference().child("messages")
-        ref.removeAllObservers()
-        ref.observe(.childAdded, with: {snapshot in
-            if let message = Message(snapshot) {
-                if let toID = message.toID {
-                    if let existing = self.messageDictionary[toID] {
-                        if let questionedTime = message.timestamp?.intValue, let existedTime = existing.timestamp?.intValue {
-                            if questionedTime <= existedTime {
-                                return
-                            }
-                        }
-                    }
-                    
-                    self.messageDictionary[toID] = message
-                    self.filterMessages()
-                }
-                
-                DispatchQueue.main.async {
-                    self.tableView.reloadData()
-                }
-            }
-        })
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

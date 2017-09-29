@@ -7,6 +7,15 @@
 //
 
 import UIKit
+import Firebase
+
+struct Constants {
+    static let dbRoot = Database.database().reference()
+    static let dbMessages = Constants.dbRoot.child("messages")
+    static let dbUsers = Constants.dbRoot.child("users")
+    static let dbUserMessages = Constants.dbRoot.child("user-messages")
+}
+
 
 let imageCache = NSCache<NSString,UIImage>()
 

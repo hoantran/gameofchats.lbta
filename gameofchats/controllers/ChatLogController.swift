@@ -99,12 +99,27 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         if  let message = inputTextField.text,
             let toID = user?.id,
             let fromID = Auth.auth().currentUser?.uid {
-            let ref = Database.database().reference().child("messages")
-            let childRef = ref.childByAutoId()
+            let ref = Constants.dbMessages
+            let messgeRef = ref.childByAutoId()
             let timestamp:NSNumber = NSNumber(value: Int(NSDate().timeIntervalSince1970))
             let values = ["text": message, "fromID": fromID, "toID": toID, "timestamp": timestamp] as [String : Any]
-            childRef.updateChildValues(values)
-            
+            messgeRef.updateChildValues(values, withCompletionBlock: {errorA, refA in
+                if errorA != nil {
+                    print ("Error in saving a new message : %@", errorA ?? "")
+                    return
+                }
+                let userMessagesRef = Constants.dbUserMessages.child(fromID)
+                let set = [messgeRef.key:1]
+                userMessagesRef.updateChildValues(set, withCompletionBlock: {errorB, refB in
+                    if errorB != nil {
+                        print ("Error in saving a user message : %@", errorB ?? "")
+                        return
+                    }
+                })
+                
+                Constants.dbUserMessages.child(toID).updateChildValues([messgeRef.key:1])
+                
+            })
             inputTextField.text = ""
         }
     }

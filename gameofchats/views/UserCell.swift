@@ -14,8 +14,9 @@ class UserCell:UITableViewCell {
     
     var message: Message? {
         didSet {
-            if let toID = message?.toID {
-                let ref = Database.database().reference().child("users").child(toID)
+            let partnerID = Auth.auth().currentUser?.uid == message?.fromID ? message?.toID : message?.fromID
+            if let id = partnerID {
+                let ref = Database.database().reference().child("users").child(id)
                 ref.observeSingleEvent(of: .value, with: { snapshot in
                     if let user = User(snapshot) {
                         self.textLabel?.text = user.name
@@ -36,7 +37,6 @@ class UserCell:UITableViewCell {
     
     let timeLabel: UILabel = {
         let label = UILabel()
-        label.text = "00:00:00"
         label.font = UIFont.systemFont(ofSize: 13)
         label.textColor = UIColor.lightGray
         label.translatesAutoresizingMaskIntoConstraints = false

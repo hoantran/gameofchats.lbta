@@ -54,8 +54,6 @@ extension LoginViewController: UIImagePickerControllerDelegate, UINavigationCont
             
             let user = User(dictionary: values)
             self.messageController?.setupNavBar(user)
-            self.messageController?.observeMessages()
-            self.messageController?.reloadMessages()
             self.dismiss(animated: true, completion: nil)
         })
     }
@@ -98,8 +96,6 @@ extension LoginViewController: UIImagePickerControllerDelegate, UINavigationCont
                 if let uid = user?.uid {
                     self.updateProfileImageToServer(uid)
                 }
-                self.messageController?.observeMessages()
-                self.messageController?.reloadMessages()
             } else {
                 print ("Error signing in: %@", error ?? "")
             }
