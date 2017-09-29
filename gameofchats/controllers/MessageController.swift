@@ -18,6 +18,7 @@ extension UIColor {
 class MessageController: UITableViewController {
 
     var messages = [Message]()
+    var messageDictionary = [String:Message]()
     
     fileprivate func checkIfUserIsLoggedIn() {
         if Auth.auth().currentUser?.uid == nil {
@@ -138,12 +139,13 @@ class MessageController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor.cyan
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
         
         let image = UIImage(named: "new_message_icon")
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: image , style: .plain, target: self, action: #selector(handleNewMessage))
+        
+        tableView.register(UserCell.self, forCellReuseIdentifier: UserCell.cellID)
         
         checkIfUserIsLoggedIn()
         observeMessages()
@@ -153,7 +155,28 @@ class MessageController: UITableViewController {
         let ref = Database.database().reference().child("messages")
         ref.observe(.childAdded, with: {snapshot in
             if let message = Message(snapshot) {
-                self.messages.append(message)
+                
+                if let toID = message.toID {
+                    if let existing = self.messageDictionary[toID] {
+                        if let questionedTime = message.timestamp?.intValue, let existedTime = existing.timestamp?.intValue {
+                            if questionedTime <= existedTime {
+                                return
+                            }
+                        }
+                    }
+                    
+                    self.messageDictionary[toID] = message
+                    self.messages = Array(self.messageDictionary.values)
+                    self.messages.sort(by: {m1, m2 in
+                        if let m1Time = m1.timestamp?.intValue, let m2Time = m2.timestamp?.intValue {
+                            return m1Time > m2Time
+                        } else {
+                            return false
+                        }
+                    })
+                    print(self.messages)
+                }
+                
                 DispatchQueue.main.async {
                     self.tableView.reloadData()
                 }
@@ -161,17 +184,16 @@ class MessageController: UITableViewController {
         })
     }
     
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 56
+    }
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.messages.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "cellID")
-        let message = self.messages[indexPath.row]
-        
-        cell.textLabel?.text = message.fromID
-        cell.detailTextLabel?.text = message.text
-        
+        let cell = tableView.dequeueReusableCell(withIdentifier: UserCell.cellID, for: indexPath) as! UserCell
+        cell.message = self.messages[indexPath.row]
         return cell
     }
     

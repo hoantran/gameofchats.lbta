@@ -44,7 +44,7 @@ extension LoginViewController: UIImagePickerControllerDelegate, UINavigationCont
     }
     
     fileprivate func registerUserIntoDatabase(_ uid: String, values: [String: Any]) {
-        let ref = Firebase.Database.database().reference(fromURL: LoginViewController.MAIN_REF)
+        let ref = Firebase.Database.database().reference()
         let userRef = ref.child("users").child(uid)
         userRef.updateChildValues(values, withCompletionBlock: {(uError, uRef) in
             if uError != nil {
