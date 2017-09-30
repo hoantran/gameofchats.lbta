@@ -34,6 +34,9 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         setupInputParts()
         
         collectionView?.register(ChatMessageCell.self, forCellWithReuseIdentifier: ChatMessageCell.ID)
+        
+        collectionView?.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 55, right: 0)
+        collectionView?.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
     }
 
     fileprivate func setupInputParts() {
@@ -110,8 +113,23 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         }
     }
     
+    private func estimatedSize(_ text: String) -> CGRect {
+        let size = CGSize(width: 200, height: CGFloat.greatestFiniteMagnitude)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+        return NSString(string: text).boundingRect(with: size, options: options, attributes: [.font: UIFont.systemFont(ofSize: CGFloat(Constants.chatTextFontSize))], context: nil)
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        collectionView?.collectionViewLayout.invalidateLayout()
+    }
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: view.frame.width, height: 80)
+        var height:CGFloat = 80
+        
+        if let text = messages[indexPath.row].text {
+            height = estimatedSize(text).height + 20
+        }
+        return CGSize(width: view.frame.width, height: height)
     }
     
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -120,7 +138,13 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChatMessageCell.ID, for: indexPath) as! ChatMessageCell
-        cell.textView.text = messages[indexPath.row].text
+        let message = messages[indexPath.row].text
+        cell.textView.text = message
+        var width:CGFloat = 200
+        if let text = message {
+            width = estimatedSize(text).width + 20
+        }
+        cell.bubbleWidthAnchor?.constant = width
         return cell
     }
     
@@ -135,7 +159,12 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     @objc func handleSend() {
         if  let message = inputTextField.text,
             let toID = user?.id,
-            let fromID = Auth.auth().currentUser?.uid {
+            let fromID = Auth.auth().currentUser?.uid
+        {
+            if message.count == 0 {
+                return
+                
+            }
             let ref = Constants.dbMessages
             let messgeRef = ref.childByAutoId()
             let timestamp:NSNumber = NSNumber(value: Int(NSDate().timeIntervalSince1970))
@@ -149,7 +178,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                 let userMessagesDictionary = ["/\(fromID)/\(messgeRef.key)": 1, "/\(toID)/\(messgeRef.key)": 1]
                 Constants.dbUserMessages.updateChildValues(userMessagesDictionary)
             })
-            inputTextField.text = ""
+            inputTextField.text = nil
         }
     }
     

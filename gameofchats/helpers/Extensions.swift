@@ -14,6 +14,7 @@ struct Constants {
     static let dbMessages = Constants.dbRoot.child("messages")
     static let dbUsers = Constants.dbRoot.child("users")
     static let dbUserMessages = Constants.dbRoot.child("user-messages")
+    static let chatTextFontSize = 16
 }
 
 
