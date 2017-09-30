@@ -138,15 +138,40 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChatMessageCell.ID, for: indexPath) as! ChatMessageCell
-        let message = messages[indexPath.row].text
-        cell.textView.text = message
+        let message = messages[indexPath.row]
+        cell.textView.text = message.text
+        
+        setupCell(message: message, cell: cell)
+        
         var width:CGFloat = 200
-        if let text = message {
+        if let text = message.text {
             width = estimatedSize(text).width + 20
         }
         cell.bubbleWidthAnchor?.constant = width
+        
         return cell
     }
+    
+    private func setupCell(message: Message, cell: ChatMessageCell) {
+        if let url = user?.profileImageURL {
+            cell.profileImageView.loadImage(url)
+        }
+        
+        if message.partnerID() == message.fromID {
+            cell.bubbleView.backgroundColor = Constants.chatBubbleColorForFrom
+            cell.textView.textColor = UIColor.black
+            cell.bubbleLeftAnchor?.isActive = true
+            cell.bubbleRightAnchor?.isActive = false
+            cell.profileImageView.isHidden = false
+        } else {
+            cell.bubbleView.backgroundColor = Constants.chatBubbleColorForTo
+            cell.textView.textColor = UIColor.black
+            cell.bubbleLeftAnchor?.isActive = false
+            cell.bubbleRightAnchor?.isActive = true
+            cell.profileImageView.isHidden = true
+        }
+    }
+    
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if textField == inputTextField {

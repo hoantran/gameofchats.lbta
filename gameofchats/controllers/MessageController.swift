@@ -136,12 +136,19 @@ class MessageController: UITableViewController {
                         self.messageDictionary[key] = message
                         self.filterMessages()
                     
-                        DispatchQueue.main.async {
-                            self.tableView.reloadData()
-                        }
+                        self.timer?.invalidate()
+                        self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
                 }
             })
         })
+    }
+
+    var timer: Timer?
+    
+    @objc func handleReloadTable() {
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
     }
     
     func filterMessages() {

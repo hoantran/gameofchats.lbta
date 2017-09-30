@@ -14,7 +14,7 @@ class ChatMessageCell: UICollectionViewCell {
     var bubbleView: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
-        v.backgroundColor = UIColor(r: 0, g: 137, b: 249)
+        v.backgroundColor = Constants.chatBubbleColorForTo
         v.layer.cornerRadius = 16
         v.layer.masksToBounds = true
         return v
@@ -29,7 +29,19 @@ class ChatMessageCell: UICollectionViewCell {
         return v
     }()
     
+    var profileImageView: UIImageView = {
+        let v = UIImageView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.image = UIImage(named: "default_user")
+        v.layer.cornerRadius = 16
+        v.layer.masksToBounds = true
+        v.contentMode = .scaleToFill
+        return v
+    }()
+    
     var bubbleWidthAnchor: NSLayoutConstraint?
+    var bubbleLeftAnchor: NSLayoutConstraint?
+    var bubbleRightAnchor: NSLayoutConstraint?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -37,8 +49,11 @@ class ChatMessageCell: UICollectionViewCell {
         addSubview(bubbleView)
         bubbleWidthAnchor = bubbleView.widthAnchor.constraint(equalToConstant: 300)
         bubbleWidthAnchor?.isActive = true
+        bubbleLeftAnchor = bubbleView.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8 )
+        bubbleRightAnchor = bubbleView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
+        bubbleRightAnchor?.isActive = true
+
         NSLayoutConstraint.activate([
-            bubbleView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8),
             bubbleView.topAnchor.constraint(equalTo: self.topAnchor),
             bubbleView.heightAnchor.constraint(equalTo: self.heightAnchor)
             ])
@@ -49,6 +64,14 @@ class ChatMessageCell: UICollectionViewCell {
             textView.topAnchor.constraint(equalTo: self.topAnchor),
             textView.rightAnchor.constraint(equalTo: bubbleView.rightAnchor),
             textView.heightAnchor.constraint(equalTo: self.heightAnchor)
+            ])
+        
+        addSubview(profileImageView)
+        NSLayoutConstraint.activate([
+            profileImageView.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 8),
+            profileImageView.bottomAnchor.constraint(equalTo: self.bottomAnchor),
+            profileImageView.widthAnchor.constraint(equalToConstant: 32),
+            profileImageView.heightAnchor.constraint(equalToConstant: 32)
             ])
     }
     
