@@ -94,15 +94,6 @@ class MessageController: UITableViewController {
         chatLogController.user = user
         navigationController?.pushViewController(chatLogController, animated: true)
     }
-        
-//        titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showChatController)))
-//    }
-//
-//    @objc func showChatController() {
-//        print("hey")
-//        let controller = ChatLogController()
-//        navigationController?.pushViewController(controller, animated: true)
-//    }
     
     @objc func handleNewMessage() {
         let controller = NewMessageController()
@@ -131,24 +122,23 @@ class MessageController: UITableViewController {
             let messageID = snapshot.key
             let messageRef = Constants.dbMessages.child(messageID)
             messageRef.observeSingleEvent(of: .value, with: {messageSnap in
-                if let message = Message(messageSnap) {
-                    if let toID = message.toID, let fromID = message.fromID {
-                        let key = "\(toID):from:\(fromID)"
-                        if let existing = self.messageDictionary[key] {
-                            if let questionedTime = message.timestamp?.intValue, let existedTime = existing.timestamp?.intValue {
+                if  let message = Message(messageSnap),
+                    let key = message.partnerID() {
+
+                        if  let existing = self.messageDictionary[key],
+                            let questionedTime = message.timestamp?.intValue,
+                            let existedTime = existing.timestamp?.intValue {
                                 if questionedTime <= existedTime {
                                     return
                                 }
-                            }
                         }
                         
                         self.messageDictionary[key] = message
                         self.filterMessages()
-                    }
                     
-                    DispatchQueue.main.async {
-                        self.tableView.reloadData()
-                    }
+                        DispatchQueue.main.async {
+                            self.tableView.reloadData()
+                        }
                 }
             })
         })
@@ -173,6 +163,19 @@ class MessageController: UITableViewController {
         } else {
             return [Message]()
         }
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        print(messages[indexPath.row])
+        if let partnerID = messages[indexPath.row].partnerID() {
+            let ref = Constants.dbUsers.child(partnerID)
+            ref.observeSingleEvent(of: .value, with: {snapshot in
+                if let user = User(snapshot) {
+                    self.showChatController(user: user)
+                }
+            })
+        }
+        
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

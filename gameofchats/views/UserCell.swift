@@ -14,8 +14,7 @@ class UserCell:UITableViewCell {
     
     var message: Message? {
         didSet {
-            let partnerID = Auth.auth().currentUser?.uid == message?.fromID ? message?.toID : message?.fromID
-            if let id = partnerID {
+            if let id = message?.partnerID() {
                 let ref = Database.database().reference().child("users").child(id)
                 ref.observeSingleEvent(of: .value, with: { snapshot in
                     if let user = User(snapshot) {

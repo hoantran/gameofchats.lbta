@@ -27,4 +27,12 @@ class Message: NSObject {
         self.toID = dictionary["toID"] as? String
         self.timestamp = dictionary["timestamp"] as? NSNumber
     }
+    
+    func partnerID()->String? {
+        return Auth.auth().currentUser?.uid == fromID ? toID : fromID
+    }
+    
+    override var description: String {
+        return "from:[\(fromID ?? "")], to:[\(toID ?? "")], message: [\(text ?? "")]"
+    }
 }
