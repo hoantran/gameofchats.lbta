@@ -37,31 +37,32 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         
         collectionView?.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 55, right: 0)
         collectionView?.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
+        
+        setupKeyboardObserver()
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        NotificationCenter.default.removeObserver(self)
     }
 
+    var containerViewBottomAnchor: NSLayoutConstraint?
+    
     fileprivate func setupInputParts() {
         let containerView = UIView()
         containerView.backgroundColor = UIColor.white
         containerView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(containerView)
         
-//        if #available(iOS 11, *) {
-            let guide = view.safeAreaLayoutGuide
-            NSLayoutConstraint.activate([
-                containerView.leadingAnchor.constraint(equalTo: guide.leadingAnchor),
-                containerView.trailingAnchor.constraint(equalTo: guide.trailingAnchor),
-                containerView.heightAnchor.constraint(equalToConstant: 50),
-                containerView.bottomAnchor.constraint(equalTo: guide.bottomAnchor)
-                ])
-//        } else {
-//            let standardSpacing: CGFloat = 8.0
-//            NSLayoutConstraint.activate([
-//                containerView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: standardSpacing),
-//                containerView.bottomAnchor.constraint(equalTo: bottomLayoutGuide.topAnchor, constant: standardSpacing),
-//                containerView.widthAnchor.constraint(equalTo: view.widthAnchor),
-//                containerView.heightAnchor.constraint(equalToConstant: 50)
-//                ])
-//        }
+        let guide = view.safeAreaLayoutGuide
+        NSLayoutConstraint.activate([
+            containerView.leadingAnchor.constraint(equalTo: guide.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: guide.trailingAnchor),
+            containerView.heightAnchor.constraint(equalToConstant: 50),
+//            containerView.bottomAnchor.constraint(equalTo: guide.bottomAnchor)
+            ])
+        containerViewBottomAnchor = containerView.bottomAnchor.constraint(equalTo: guide.bottomAnchor)
+        containerViewBottomAnchor?.isActive = true
         
         let sendButton = UIButton(type: .system)
         sendButton.setTitle("Send", for: .normal)
@@ -111,6 +112,30 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                 })
             })
         }
+    }
+    
+    func setupKeyboardObserver() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+    }
+
+    @objc func handleKeyboardWillShow(notification: NSNotification) {
+        let keyboardFrame = (notification.userInfo?[UIKeyboardFrameEndUserInfoKey] as AnyObject).cgRectValue
+        let keyboardDuration = (notification.userInfo?[UIKeyboardAnimationDurationUserInfoKey] as AnyObject).doubleValue
+
+        containerViewBottomAnchor?.constant = -keyboardFrame!.height
+        UIView.animate(withDuration: keyboardDuration!, animations: {
+            self.view.layoutIfNeeded()
+        })
+    }
+    
+    @objc func handleKeyboardWillHide(_ notification: Notification) {
+        let keyboardDuration = (notification.userInfo?[UIKeyboardAnimationDurationUserInfoKey] as AnyObject).doubleValue
+        
+        containerViewBottomAnchor?.constant = 0
+        UIView.animate(withDuration: keyboardDuration!, animations: {
+            self.view.layoutIfNeeded()
+        })
     }
     
     private func estimatedSize(_ text: String) -> CGRect {
