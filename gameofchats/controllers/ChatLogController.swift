@@ -145,15 +145,13 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     var messages = [Message]()
     fileprivate func observeMessages() {
-        if let userID = Auth.auth().currentUser?.uid {
-            Constants.dbUserMessages.child(userID).observe(.childAdded, with: {usermessageSnap in
+        if let userID = Auth.auth().currentUser?.uid, let toID = user?.id {
+            Constants.dbUserMessages.child(userID).child(toID).observe(.childAdded, with: {usermessageSnap in
                 Constants.dbMessages.child(usermessageSnap.key).observeSingleEvent(of: .value, with: {messageSnap in
                     if let message = Message(messageSnap) {
-                        if message.partnerID() == self.user?.id {
-                            self.messages.append(message)
-                            DispatchQueue.main.async {
-                                self.collectionView?.reloadData()
-                            }
+                        self.messages.append(message)
+                        DispatchQueue.main.async {
+                            self.collectionView?.reloadData()
                         }
                     }
                 })
@@ -272,7 +270,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                     return
                 }
                 
-                let userMessagesDictionary = ["/\(fromID)/\(messgeRef.key)": 1, "/\(toID)/\(messgeRef.key)": 1]
+                let userMessagesDictionary = ["/\(fromID)/\(toID)/\(messgeRef.key)": 1, "/\(toID)/\(fromID)/\(messgeRef.key)": 1]
                 Constants.dbUserMessages.updateChildValues(userMessagesDictionary)
             })
             inputTextField.text = nil

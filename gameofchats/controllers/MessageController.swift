@@ -115,44 +115,45 @@ class MessageController: UITableViewController {
         checkIfUserIsLoggedIn()
     }
     
+    fileprivate func fetchMessage(_ messageID: String) {
+        let messageRef = Constants.dbMessages.child(messageID)
+        messageRef.observeSingleEvent(of: .value, with: {messageSnap in
+            if  let message = Message(messageSnap),
+                let key = message.partnerID() {
+                self.messageDictionary[key] = message
+                self.attemptReloadOfTable()
+            }
+        })
+    }
+    
     func observeUserMessages(){
-        guard let userID = Auth.auth().currentUser?.uid else { return }
-        let ref = Constants.dbUserMessages.child(userID)
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let ref = Constants.dbUserMessages.child(uid)
         ref.observe(.childAdded, with: {snapshot in
-            let messageID = snapshot.key
-            let messageRef = Constants.dbMessages.child(messageID)
-            messageRef.observeSingleEvent(of: .value, with: {messageSnap in
-                if  let message = Message(messageSnap),
-                    let key = message.partnerID() {
-
-                        if  let existing = self.messageDictionary[key],
-                            let questionedTime = message.timestamp?.intValue,
-                            let existedTime = existing.timestamp?.intValue {
-                                if questionedTime <= existedTime {
-                                    return
-                                }
-                        }
-                        
-                        self.messageDictionary[key] = message
-                        self.filterMessages()
-                    
-                        self.timer?.invalidate()
-                        self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
-                }
+            let userId = snapshot.key
+            Constants.dbUserMessages.child(uid).child(userId).observe(.childAdded, with: {snapA in
+                let messageID = snapA.key
+                self.fetchMessage(messageID)
             })
         })
     }
 
+    private func attemptReloadOfTable() {
+        self.timer?.invalidate()
+        self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
+    }
+    
     var timer: Timer?
     
     @objc func handleReloadTable() {
+        filterMessages()
         DispatchQueue.main.async {
             self.tableView.reloadData()
         }
     }
     
     func filterMessages() {
-        self.messages = getMessagesForCurrentUser(Array(self.messageDictionary.values))
+        self.messages = Array(self.messageDictionary.values)
         self.messages.sort(by: {m1, m2 in
             if let m1Time = m1.timestamp?.intValue, let m2Time = m2.timestamp?.intValue {
                 return m1Time > m2Time
