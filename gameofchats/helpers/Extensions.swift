@@ -14,6 +14,8 @@ struct Constants {
     static let dbMessages = Constants.dbRoot.child("messages")
     static let dbUsers = Constants.dbRoot.child("users")
     static let dbUserMessages = Constants.dbRoot.child("user-messages")
+    static let dbStorage = Storage.storage().reference()
+    static let dbMessageImage = Constants.dbStorage.child("message_images")
     static let chatTextFontSize = 16
     static let chatBubbleColorForTo = UIColor(r: 0, g: 137, b: 249)
     static let chatBubbleColorForFrom = UIColor(r: 220, g: 220, b: 220)

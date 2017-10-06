@@ -14,6 +14,7 @@ class Message: NSObject {
     @objc var fromID: String?
     @objc var toID: String?
     @objc var timestamp: NSNumber?
+    @objc var imageURL: String?
     
     init?(_ snapshot: DataSnapshot) {
         guard let dictionary = snapshot.value as? [String: Any] else { return nil}
@@ -26,6 +27,7 @@ class Message: NSObject {
         self.fromID = dictionary["fromID"] as? String
         self.toID = dictionary["toID"] as? String
         self.timestamp = dictionary["timestamp"] as? NSNumber
+        self.imageURL = dictionary["imageURL"] as? String
     }
     
     func partnerID()->String? {

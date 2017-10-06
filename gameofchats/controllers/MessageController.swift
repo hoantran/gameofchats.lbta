@@ -174,7 +174,6 @@ class MessageController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print(messages[indexPath.row])
         if let partnerID = messages[indexPath.row].partnerID() {
             let ref = Constants.dbUsers.child(partnerID)
             ref.observeSingleEvent(of: .value, with: {snapshot in
