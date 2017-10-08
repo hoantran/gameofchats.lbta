@@ -19,6 +19,7 @@ struct Constants {
     static let chatTextFontSize = 16
     static let chatBubbleColorForTo = UIColor(r: 0, g: 137, b: 249)
     static let chatBubbleColorForFrom = UIColor(r: 220, g: 220, b: 220)
+    static let messageImageWidth = 200
 }
 
 
@@ -54,3 +55,26 @@ extension UIImageView {
         }
     }
 }
+
+// https://www.youtube.com/watch?v=FqDVKW9Rn_M&t=921s
+// Abtin S's suggestion
+extension UICollectionView {
+    func scrollToBottom() {
+        var indexPath:IndexPath?
+        if self.numberOfSections > 1 {
+            let lastSection = self.numberOfSections - 1
+            indexPath = IndexPath(item: numberOfItems(inSection: lastSection)-1, section: lastSection)
+        } else if numberOfItems(inSection: 0) > 0 && numberOfSections == 1 {
+            indexPath = IndexPath(item: numberOfItems(inSection: 0)-1, section: 0)
+        }
+        if let indexPath = indexPath {
+            scrollToItem(at: indexPath, at: .bottom, animated: true)
+        }
+    }
+}
+
+
+
+
+
+

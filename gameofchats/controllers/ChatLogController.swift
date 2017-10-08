@@ -37,6 +37,15 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         collectionView?.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         
         collectionView?.keyboardDismissMode = .interactive
+        setupKeyboardObserver()
+    }
+    
+    func setupKeyboardObserver() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardDidShow), name: NSNotification.Name.UIKeyboardDidShow, object: nil)
+    }
+    
+    @objc func handleKeyboardDidShow(){
+        self.collectionView?.scrollToBottom()
     }
     
     lazy var inputContainerView: UIView = {
@@ -109,42 +118,22 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         }
         
         if let selectedImage = imageFromPicker {
-            uploadImage(selectedImage)
+            send(selectedImage)
         }
         
         dismiss(animated: true, completion: nil)
     }
     
-    private func uploadImage(_ image: UIImage) {
-        uploadMessageImage(image, completion: {metadata in
+    private func send(_ image: UIImage) {
+        upload(image, completion: {metadata in
             if let imageURL = metadata.downloadURL()?.absoluteString {
-                self.sendImage(imageURL)
+                self.post(["imageURL": imageURL, "imageWidth": image.size.width, "imageHeight": image.size.height] as [String:Any])
+                
             }
         })
     }
     
-    private func sendImage(_ imageURL: String) {
-        if  let toID = user?.id,
-            let fromID = Auth.auth().currentUser?.uid
-        {
-            let ref = Constants.dbMessages
-            let messgeRef = ref.childByAutoId()
-            let timestamp:NSNumber = NSNumber(value: Int(NSDate().timeIntervalSince1970))
-            let values = ["imageURL": imageURL, "fromID": fromID, "toID": toID, "timestamp": timestamp] as [String : Any]
-            messgeRef.updateChildValues(values, withCompletionBlock: {errorA, refA in
-                if errorA != nil {
-                    print ("Error in saving a new image message : %@", errorA ?? "")
-                    return
-                }
-                
-                let userMessagesDictionary = ["/\(fromID)/\(toID)/\(messgeRef.key)": 1, "/\(toID)/\(fromID)/\(messgeRef.key)": 1]
-                Constants.dbUserMessages.updateChildValues(userMessagesDictionary)
-            })
-            inputTextField.text = nil
-        }
-    }
-    
-    func uploadMessageImage(_ image: UIImage, completion: @escaping (StorageMetadata)->Void) {
+    func upload(_ image: UIImage, completion: @escaping (StorageMetadata)->Void) {
         let imageName = UUID().uuidString
         let storageRef = Constants.dbMessageImage.child("\(imageName).jpg")
         if let uploadData = UIImageJPEGRepresentation(image, 0.2)  {
@@ -159,6 +148,29 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             })
         }
     }
+
+    private func post(_ properties: [String : Any]) {
+        if  let toID = user?.id,
+            let fromID = Auth.auth().currentUser?.uid
+        {
+            let ref = Constants.dbMessages
+            let messgeRef = ref.childByAutoId()
+            let timestamp:NSNumber = NSNumber(value: Int(NSDate().timeIntervalSince1970))
+            var values = ["fromID": fromID, "toID": toID, "timestamp": timestamp] as [String : Any]
+            properties.forEach({ values[$0] = $1 })
+            messgeRef.updateChildValues(values, withCompletionBlock: {errorA, refA in
+                if errorA != nil {
+                    print ("Error in posting a new message : %@", errorA ?? "")
+                    return
+                }
+                
+                let userMessagesDictionary = ["/\(fromID)/\(toID)/\(messgeRef.key)": 1, "/\(toID)/\(fromID)/\(messgeRef.key)": 1]
+                Constants.dbUserMessages.updateChildValues(userMessagesDictionary)
+            })
+            inputTextField.text = nil
+        }
+    }
+
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         dismiss(animated: true, completion: nil)
@@ -190,6 +202,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                         self.messages.append(message)
                         DispatchQueue.main.async {
                             self.collectionView?.reloadData()
+                            self.collectionView?.scrollToBottom()
                         }
                     }
                 })
@@ -229,8 +242,11 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         var height:CGFloat = 80
         
-        if let text = messages[indexPath.row].text {
+        let message = messages[indexPath.row]
+        if let text = message.text {
             height = estimatedSize(text).height + 20
+        } else if let imageWidth = message.imageWidth?.floatValue, let imageHeight = message.imageHeight?.floatValue {
+            height = CGFloat(imageHeight) * CGFloat(Constants.messageImageWidth) / CGFloat(imageWidth)
         }
         return CGSize(width: view.frame.width, height: height)
     }
@@ -246,9 +262,11 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         
         setupCell(message: message, cell: cell)
         
-        var width:CGFloat = 200
+        var width:CGFloat = CGFloat(Constants.messageImageWidth)
         if let text = message.text {
             width = estimatedSize(text).width + 20
+        } else if message.imageURL != nil {
+            width = CGFloat(Constants.messageImageWidth)
         }
         cell.bubbleWidthAnchor?.constant = width
         
@@ -293,28 +311,10 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     }
     
     @objc func handleSend() {
-        if  let message = inputTextField.text,
-            let toID = user?.id,
-            let fromID = Auth.auth().currentUser?.uid
-        {
-            if message.count == 0 {
-                return
-                
+        if let message = inputTextField.text {
+            if message.count != 0 {
+                self.post(["text": message] as [String:Any])
             }
-            let ref = Constants.dbMessages
-            let messgeRef = ref.childByAutoId()
-            let timestamp:NSNumber = NSNumber(value: Int(NSDate().timeIntervalSince1970))
-            let values = ["text": message, "fromID": fromID, "toID": toID, "timestamp": timestamp] as [String : Any]
-            messgeRef.updateChildValues(values, withCompletionBlock: {errorA, refA in
-                if errorA != nil {
-                    print ("Error in saving a new message : %@", errorA ?? "")
-                    return
-                }
-                
-                let userMessagesDictionary = ["/\(fromID)/\(toID)/\(messgeRef.key)": 1, "/\(toID)/\(fromID)/\(messgeRef.key)": 1]
-                Constants.dbUserMessages.updateChildValues(userMessagesDictionary)
-            })
-            inputTextField.text = nil
         }
     }
     

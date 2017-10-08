@@ -15,6 +15,8 @@ class Message: NSObject {
     @objc var toID: String?
     @objc var timestamp: NSNumber?
     @objc var imageURL: String?
+    @objc var imageWidth: NSNumber?
+    @objc var imageHeight: NSNumber?
     
     init?(_ snapshot: DataSnapshot) {
         guard let dictionary = snapshot.value as? [String: Any] else { return nil}
@@ -28,6 +30,8 @@ class Message: NSObject {
         self.toID = dictionary["toID"] as? String
         self.timestamp = dictionary["timestamp"] as? NSNumber
         self.imageURL = dictionary["imageURL"] as? String
+        self.imageWidth = dictionary["imageWidth"] as? NSNumber
+        self.imageHeight = dictionary["imageHeight"] as? NSNumber
     }
     
     func partnerID()->String? {
