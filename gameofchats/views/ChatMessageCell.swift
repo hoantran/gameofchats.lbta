@@ -11,6 +11,8 @@ import UIKit
 class ChatMessageCell: UICollectionViewCell {
     static let ID = "chatmessagecell"
     
+    var chatLogController: ChatLogController?
+    
     var bubbleView: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
@@ -26,6 +28,7 @@ class ChatMessageCell: UICollectionViewCell {
         v.translatesAutoresizingMaskIntoConstraints = false
         v.backgroundColor = UIColor.clear
         v.textColor = UIColor.white
+        v.isEditable = false
         return v
     }()
     
@@ -39,15 +42,23 @@ class ChatMessageCell: UICollectionViewCell {
         return v
     }()
     
-    var messageImageView: UIImageView = {
+    lazy var messageImageView: UIImageView = {
         let v = UIImageView()
         v.translatesAutoresizingMaskIntoConstraints = false
         v.layer.cornerRadius = 16
         v.layer.masksToBounds = true
-        v.contentMode = .scaleAspectFill
-        v.backgroundColor = UIColor.clear
+        v.contentMode = .scaleAspectFit
+        v.backgroundColor = UIColor.black
+        v.isUserInteractionEnabled = true
+        v.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomTap)))
         return v
     }()
+    
+    @objc func handleZoomTap(tapGesture: UITapGestureRecognizer) {
+        if let imageView = tapGesture.view as? UIImageView {
+            chatLogController?.performZoomIn(imageView: imageView)
+        }
+    }
     
     var bubbleWidthAnchor: NSLayoutConstraint?
     var bubbleLeftAnchor: NSLayoutConstraint?
@@ -68,14 +79,6 @@ class ChatMessageCell: UICollectionViewCell {
             bubbleView.heightAnchor.constraint(equalTo: self.heightAnchor)
             ])
         
-        addSubview(messageImageView)
-        NSLayoutConstraint.activate([
-            messageImageView.leftAnchor.constraint(equalTo: bubbleView.leftAnchor),
-            messageImageView.topAnchor.constraint(equalTo: bubbleView.topAnchor),
-            messageImageView.widthAnchor.constraint(equalTo: bubbleView.widthAnchor),
-            messageImageView.heightAnchor.constraint(equalTo: bubbleView.heightAnchor)
-            ])
-        
         addSubview(textView)
         NSLayoutConstraint.activate([
             textView.leftAnchor.constraint(equalTo: bubbleView.leftAnchor, constant: 8),
@@ -90,6 +93,14 @@ class ChatMessageCell: UICollectionViewCell {
             profileImageView.bottomAnchor.constraint(equalTo: self.bottomAnchor),
             profileImageView.widthAnchor.constraint(equalToConstant: 32),
             profileImageView.heightAnchor.constraint(equalToConstant: 32)
+            ])
+        
+        addSubview(messageImageView)
+        NSLayoutConstraint.activate([
+            messageImageView.leftAnchor.constraint(equalTo: bubbleView.leftAnchor),
+            messageImageView.topAnchor.constraint(equalTo: bubbleView.topAnchor),
+            messageImageView.widthAnchor.constraint(equalTo: bubbleView.widthAnchor),
+            messageImageView.heightAnchor.constraint(equalTo: bubbleView.heightAnchor)
             ])
     }
     

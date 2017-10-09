@@ -265,8 +265,11 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         var width:CGFloat = CGFloat(Constants.messageImageWidth)
         if let text = message.text {
             width = estimatedSize(text).width + 20
+            cell.textView.isHidden = false
         } else if message.imageURL != nil {
             width = CGFloat(Constants.messageImageWidth)
+            cell.textView.isHidden = true
+            cell.chatLogController = self
         }
         cell.bubbleWidthAnchor?.constant = width
         
@@ -315,6 +318,59 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             if message.count != 0 {
                 self.post(["text": message] as [String:Any])
             }
+        }
+    }
+    
+    var startingFrame: CGRect?
+    var blackBkgView: UIView?
+    var startingImageView: UIImageView?
+    
+    func performZoomIn(imageView: UIImageView) {
+        startingImageView = imageView
+        startingFrame = imageView.superview?.convert(imageView.frame, to: nil)
+        if let startFrame = startingFrame {
+            let zoomView = UIImageView(frame: startFrame)
+            zoomView.backgroundColor = UIColor.red
+            zoomView.image = imageView.image
+            zoomView.layer.cornerRadius = 16
+            zoomView.layer.masksToBounds = true
+            zoomView.isUserInteractionEnabled = true
+            zoomView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomOut)))
+            if let keyWindow = UIApplication.shared.keyWindow {
+                startingImageView?.isHidden = true
+                blackBkgView = UIView(frame: keyWindow.frame)
+                blackBkgView?.backgroundColor = UIColor.black
+                blackBkgView?.alpha = 0
+                keyWindow.addSubview(blackBkgView!)
+                
+                keyWindow.addSubview(zoomView)
+                
+                UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseIn, animations: {
+                    zoomView.layer.cornerRadius = 0
+                    self.blackBkgView?.alpha = 1
+                    self.inputContainerView.alpha = 0
+                    let height = startFrame.height * keyWindow.frame.width / startFrame.width
+                    
+                    zoomView.frame = CGRect(x: 0, y: 0, width: keyWindow.frame.width, height: height)
+                    zoomView.center = keyWindow.center
+                }, completion: nil)
+            }
+        }
+    }
+    
+    @objc func handleZoomOut(gesture: UITapGestureRecognizer) {
+        if let zoomOutView = gesture.view {
+            UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
+                self.inputContainerView.alpha = 1
+                zoomOutView.layer.cornerRadius = 16
+                if let startFrame = self.startingFrame {
+                    zoomOutView.frame = startFrame
+                }
+                self.blackBkgView?.alpha = 0
+            }, completion: { isFinished in
+                gesture.view?.removeFromSuperview()
+                self.startingImageView?.isHidden = false
+            })
         }
     }
     
