@@ -8,6 +8,8 @@
 
 import UIKit
 import Firebase
+import MobileCoreServices
+import AVFoundation
 
 class ChatLogController: UICollectionViewController, UITextFieldDelegate, UICollectionViewDelegateFlowLayout, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     var user: User? {
@@ -101,15 +103,71 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let imagePicker = UIImagePickerController()
         imagePicker.allowsEditing = true
         imagePicker.delegate = self
+        imagePicker.mediaTypes = [kUTTypeImage as String, kUTTypeMovie as String]
         present(imagePicker, animated: true, completion: nil)
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        var imageFromPicker: UIImage?
         
-//        if let url = info["UIImagePickerControllerReferenceURL"] as? URL {
-//            self.profileImageURLHash = url.absoluteString.hashValue
-//        }
+        if let videoURL = info[UIImagePickerControllerMediaURL] as? URL {
+            handleVideoSelected(videoURL)
+        } else {
+            handleImageSelected(info)
+        }
+        dismiss(animated: true, completion: nil)
+    }
+    
+    fileprivate func upload(videoFileURL: URL, completion: @escaping (String?)->Void) {
+        let fileName =  UUID().uuidString + ".mov"
+        
+        let uploadTask = Constants.dbMessageMovies.child(fileName).putFile(from: videoFileURL, metadata: nil, completion: {metadata, error in
+            if error != nil {
+                print ("Error storing video: %@", error ?? "")
+                return
+            }
+            
+            completion(metadata?.downloadURL()?.absoluteString)
+        })
+        
+        uploadTask.observe(.progress, handler: {snapshot in
+            if let completedUnitCount = snapshot.progress?.completedUnitCount, let totalUnitCount = snapshot.progress?.totalUnitCount {
+                let uploadPercentage : Float64 = Float64(completedUnitCount) * 100 / Float64(totalUnitCount)
+                self.navigationItem.title = String(format: "%.0f", uploadPercentage) + " %"
+            }
+        })
+        
+        uploadTask.observe(.success, handler: {snapshot in
+            self.navigationItem.title = self.user?.name
+        })
+    }
+    
+    private func handleVideoSelected(_ fileURL: URL) {
+        upload(videoFileURL: fileURL, completion: {storageURL in
+            if  let videoStorageURL = storageURL,
+                let thumnailImage = self.getVideoThumbnail(fileURL)  {
+                    self.upload(thumnailImage, completion: {imageStorageURL in
+                        self.post(["videoURL":videoStorageURL, "imageURL": imageStorageURL, "imageWidth": thumnailImage.size.width, "imageHeight": thumnailImage.size.height] as [String:Any])
+                })
+            }
+        })
+    }
+    
+    private func getVideoThumbnail(_ fileURL: URL)->UIImage? {
+        let asset = AVAsset(url: fileURL)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        
+        do {
+            let thumbnailCGImage = try imageGenerator.copyCGImage(at: CMTimeMake(1, 60), actualTime: nil)
+            return UIImage(cgImage: thumbnailCGImage)
+        } catch let err {
+            print ("Error getting thumbnail image for video: %@", err)
+        }
+        
+        return nil
+    }
+    
+    private func handleImageSelected(_ info: [String: Any]) {
+        var imageFromPicker: UIImage?
         
         if let editedImage = info["UIImagePickerControllerEditedImage"] as? UIImage {
             imageFromPicker = editedImage
@@ -120,20 +178,15 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         if let selectedImage = imageFromPicker {
             send(selectedImage)
         }
-        
-        dismiss(animated: true, completion: nil)
     }
     
     private func send(_ image: UIImage) {
-        upload(image, completion: {metadata in
-            if let imageURL = metadata.downloadURL()?.absoluteString {
-                self.post(["imageURL": imageURL, "imageWidth": image.size.width, "imageHeight": image.size.height] as [String:Any])
-                
-            }
+        upload(image, completion: {storageImageURL in
+            self.post(["imageURL": storageImageURL, "imageWidth": image.size.width, "imageHeight": image.size.height] as [String:Any])
         })
     }
     
-    func upload(_ image: UIImage, completion: @escaping (StorageMetadata)->Void) {
+    func upload(_ image: UIImage, completion: @escaping (String)->Void) {
         let imageName = UUID().uuidString
         let storageRef = Constants.dbMessageImage.child("\(imageName).jpg")
         if let uploadData = UIImageJPEGRepresentation(image, 0.2)  {
@@ -142,8 +195,8 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                     print ("Error storing message image: %@", sError ?? "")
                     return
                 }
-                if let metadata = metadata {
-                    completion(metadata)
+                if let storageImageURL = metadata?.downloadURL()?.absoluteString {
+                    completion(storageImageURL)
                 }
             })
         }

@@ -17,6 +17,7 @@ class Message: NSObject {
     @objc var imageURL: String?
     @objc var imageWidth: NSNumber?
     @objc var imageHeight: NSNumber?
+    @objc var videoURL: String?
     
     init?(_ snapshot: DataSnapshot) {
         guard let dictionary = snapshot.value as? [String: Any] else { return nil}
@@ -32,6 +33,7 @@ class Message: NSObject {
         self.imageURL = dictionary["imageURL"] as? String
         self.imageWidth = dictionary["imageWidth"] as? NSNumber
         self.imageHeight = dictionary["imageHeight"] as? NSNumber
+        self.videoURL = dictionary["videoURL"] as? String
     }
     
     func partnerID()->String? {
