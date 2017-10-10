@@ -315,6 +315,8 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         
         setupCell(message: message, cell: cell)
         
+        cell.message = message
+        
         var width:CGFloat = CGFloat(Constants.messageImageWidth)
         if let text = message.text {
             width = estimatedSize(text).width + 20
@@ -325,6 +327,8 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             cell.chatLogController = self
         }
         cell.bubbleWidthAnchor?.constant = width
+        
+        cell.playButton.isHidden = message.videoURL == nil
         
         return cell
     }

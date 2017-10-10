@@ -7,11 +7,31 @@
 //
 
 import UIKit
+import AVFoundation
 
 class ChatMessageCell: UICollectionViewCell {
     static let ID = "chatmessagecell"
     
+    var message:Message?
     var chatLogController: ChatLogController?
+    
+    var activityIndicator:UIActivityIndicatorView = {
+        let aiv = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+        aiv.hidesWhenStopped = true
+        aiv.translatesAutoresizingMaskIntoConstraints = false
+        return aiv
+    }()
+    
+    lazy var playButton: UIButton = {
+        var b = UIButton(type: .system)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        let image = UIImage(named: "play")
+//        b.setImage(image, for: .normal)
+        b.setImage(image, for: UIControlState())
+        b.tintColor = UIColor.white
+        b.addTarget(self, action: #selector(handlePlay), for: .touchUpInside)
+        return b
+    }()
     
     var bubbleView: UIView = {
         let v = UIView()
@@ -54,7 +74,57 @@ class ChatMessageCell: UICollectionViewCell {
         return v
     }()
     
+    var playerLayer: AVPlayerLayer?
+    var player: AVPlayer?
+    
+    @objc func handlePlay() {
+        if let videoUrlString = message?.videoURL, let url = URL(string: videoUrlString) {
+            player = AVPlayer(url: url)
+
+            player?.addObserver(self, forKeyPath: "status", options: .new, context: nil)
+            
+            playerLayer = AVPlayerLayer(player: player)
+            playerLayer?.frame = messageImageView.bounds
+            messageImageView.layer.addSublayer(playerLayer!)
+            
+            player?.play()
+            activityIndicator.startAnimating()
+            playButton.isHidden = true
+
+            print("Attempting to play video......???")
+        }
+//        let videoURL = URL(string: "https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4")
+//        let player = AVPlayer(url: videoURL!)
+//        let playerLayer = AVPlayerLayer(player: player)
+//        playerLayer.frame = bubbleView.bounds
+//        bubbleView.layer.addSublayer(playerLayer)
+//        player.play()
+    }
+    
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "status" {
+            activityIndicator.stopAnimating()
+        }
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        playButton.isHidden = false
+        willMove(toWindow: nil)
+    }
+    
+    override func willMove(toWindow newWindow: UIWindow?) {
+        activityIndicator.stopAnimating()
+        playerLayer?.removeFromSuperlayer()
+        player?.pause()
+        bringSubview(toFront: playButton)
+    }
+    
     @objc func handleZoomTap(tapGesture: UITapGestureRecognizer) {
+        if message?.videoURL != nil {
+            return
+        }
+        
         if let imageView = tapGesture.view as? UIImageView {
             chatLogController?.performZoomIn(imageView: imageView)
         }
@@ -102,6 +172,23 @@ class ChatMessageCell: UICollectionViewCell {
             messageImageView.widthAnchor.constraint(equalTo: bubbleView.widthAnchor),
             messageImageView.heightAnchor.constraint(equalTo: bubbleView.heightAnchor)
             ])
+        
+        addSubview(playButton)
+        NSLayoutConstraint.activate([
+            playButton.centerXAnchor.constraint(equalTo: bubbleView.centerXAnchor),
+            playButton.centerYAnchor.constraint(equalTo: bubbleView.centerYAnchor),
+            playButton.widthAnchor.constraint(equalToConstant: 50),
+            playButton.heightAnchor.constraint(equalToConstant: 50)
+            ])
+
+        addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: bubbleView.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: bubbleView.centerYAnchor),
+            activityIndicator.widthAnchor.constraint(equalToConstant: 50),
+            activityIndicator.heightAnchor.constraint(equalToConstant: 50)
+            ])
+
     }
     
     required init?(coder aDecoder: NSCoder) {
