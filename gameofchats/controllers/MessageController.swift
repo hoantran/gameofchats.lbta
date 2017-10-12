@@ -101,6 +101,59 @@ class MessageController: UITableViewController {
         let navController = UINavigationController(rootViewController: controller)
         present(navController, animated: true, completion: nil)
     }
+
+    func contextualDeleteAction(forRowAtIndexPath indexPath: IndexPath) -> UIContextualAction {
+        let action = UIContextualAction(style: .destructive, title: "Delete") { (action:UIContextualAction, view:UIView, success:(Bool)->Void) in
+            print("contextualDeleteAction")
+            
+            guard let uid = Auth.auth().currentUser?.uid else { return }
+            let message = self.messages[indexPath.row]
+            if let partnerID = message.partnerID() {
+                Constants.dbUserMessages.child(uid).child(partnerID).removeValue(completionBlock: {error, ref in
+                    if error != nil {
+                        print ("Error deleting a conversation: %@", error ?? "")
+                        return
+                    }
+                    self.messageDictionary.removeValue(forKey: partnerID)
+                    self.attemptReloadOfTable()
+                })
+                success(true)
+            } else {
+                success(false)
+            }
+        }
+        
+        return action
+    }
+    
+    func contextualDeleteActionFlag(forRowAtIndexPath indexPath: IndexPath) -> UIContextualAction {
+        let action = UIContextualAction(style: .normal, title: "Flag") { (action:UIContextualAction, view:UIView, success:(Bool)->Void) in
+            print("Flag")
+            success(false)
+        }
+        action.backgroundColor = UIColor.green
+        action.image = UIImage(named: "flag")
+        return action
+    }
+    
+    func contextualDeleteAction3(forRowAtIndexPath indexPath: IndexPath) -> UIContextualAction {
+        let action = UIContextualAction(style: .normal, title: "3") { (action:UIContextualAction, view:UIView, success:(Bool)->Void) in
+            print("I'm number 3")
+            success(false)
+        }
+        action.backgroundColor = UIColor.cyan
+        return action
+    }
+    
+    override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let deleteAction = self.contextualDeleteAction(forRowAtIndexPath: indexPath)
+        let flagAction = self.contextualDeleteActionFlag(forRowAtIndexPath: indexPath)
+        let threeAction = self.contextualDeleteAction3(forRowAtIndexPath: indexPath)
+        let swipeConfig = UISwipeActionsConfiguration(actions: [deleteAction, flagAction, threeAction])
+//        swipeConfig.performsFirstActionWithFullSwipe = false
+        return swipeConfig
+    }
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -135,6 +188,12 @@ class MessageController: UITableViewController {
                 let messageID = snapA.key
                 self.fetchMessage(messageID)
             })
+        })
+        
+        ref.observe(.childRemoved, with: {snapshot in
+            let userID = snapshot.key
+            self.messageDictionary.removeValue(forKey: userID)
+            self.attemptReloadOfTable()
         })
     }
 
